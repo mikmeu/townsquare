@@ -4,7 +4,7 @@
       <span v-if="nominee" class="nominee" :style="nomineeStyle" />
       <span v-if="nominator" class="nominator" :style="nominatorStyle" />
     </div>
-    <div class="overlay">
+    <div class="overlay overlayBlack">
       <em class="blue">{{ nominatorDisplayName }}</em>
       {{ voteAction }}
       <em v-if="!shouldHideNominee">
@@ -447,6 +447,11 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 @use "../vars.scss" as *;
 
+.overlayBlack {
+  background-color: rgba(0, 0, 0, 0.75);
+  padding:10px;
+  border-radius: 10px;
+}
 #vote {
   position: absolute;
   margin: auto;
@@ -456,8 +461,6 @@ onUnmounted(() => {
   align-items: center;
   align-content: center;
   justify-content: center;
-  background: url("../assets/demon-head.png") center center no-repeat;
-  background-size: auto 75%;
   text-align: center;
   text-shadow:
     0 1px 2px #000000,
@@ -552,12 +555,12 @@ onUnmounted(() => {
   }
 
   .nominator:before {
-    background-image: url("../assets/clock-small.png");
+    background-image: url("../assets/clock-small.webp");
     animation: arrow-ccw 1s ease-out;
   }
 
   .nominee:before {
-    background-image: url("../assets/clock-big.png");
+    background-image: url("../assets/clock-big.webp");
     animation: arrow-cw 1s ease-out;
   }
 }

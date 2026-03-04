@@ -168,15 +168,22 @@ function keyup(event: KeyboardEvent) {
   font-display: swap;
 }
 
+
+@font-face {
+  font-family: Dumbledore;
+  src: url("assets/fonts/dum1.ttf");
+  font-display: swap;
+}
+
 html,
 body {
   font-size: clamp(0.8em, 2.5vmin, 1.2em);
   line-height: 1.4;
-  background: url("assets/background.jpg") center center;
+  background: url("assets/background.webp") center center;
   background-size: cover;
   color: white;
   height: 100%;
-  font-family: "Roboto Condensed", sans-serif;
+  font-family: "Sorts Mill Goudy", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   padding: 0;
@@ -204,9 +211,10 @@ h4,
 h5 {
   margin: 0;
   text-align: center;
-  font-family: PiratesBay, sans-serif;
+  font-family: Dumbledore, sans-serif;
   letter-spacing: 1px;
   font-weight: normal;
+  text-transform: uppercase;
 }
 
 ul {
@@ -279,7 +287,7 @@ ul {
 
 button,
 .button {
-  font-family: "Roboto Condensed", sans-serif;
+  font-family: "Sorts Mill Goudy", sans-serif;
   font-size: 1.2rem;
   padding: 0;
   border: solid 0.125em transparent;

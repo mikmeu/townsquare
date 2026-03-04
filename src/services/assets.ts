@@ -23,5 +23,5 @@ export const getRoleImage = (role: Role): string => {
     if (role.image && !userPreferences.isImageOptIn) {
         return new URL(`../assets/icons/${role.team}.png`, import.meta.url).href;
     }
-    return new URL(`../assets/icons/${role.id}.svg`, import.meta.url).href;
+    return new URL(`../assets/icons/${role.id}.webp`, import.meta.url).href;
 };

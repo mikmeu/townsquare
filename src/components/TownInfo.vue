@@ -1,8 +1,5 @@
 <template>
   <ul class="info">
-    <li v-if="edition" class="edition" :class="['edition-' + edition.id]" :style="{
-      backgroundImage: 'url(' + logoUrl + ')',
-    }" />
     <li v-if="players.length - teams.traveler < 5">
       {{ t('towninfo.addPlayers') }}
     </li>

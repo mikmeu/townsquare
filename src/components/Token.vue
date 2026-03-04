@@ -68,7 +68,7 @@ function setRole() {
 .token {
   border-radius: 50%;
   width: 100%;
-  background: url("../assets/token.png") center center;
+  background: url("../assets/token.webp") center center;
   background-size: 100%;
   text-align: center;
   border: 3px solid black;
@@ -179,12 +179,9 @@ function setRole() {
 
     .label {
       fill: black;
-      stroke: white;
-      stroke-width: 2px;
       paint-order: stroke;
-      font-family: "Papyrus", serif;
-      font-weight: bold;
-      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+      font-family: "Dumbledore", serif;
+      text-transform:uppercase;
       letter-spacing: 1px;
 
       @-moz-document url-prefix() {
