@@ -4,5 +4,6 @@ export * from "./jukebox";
 export * from "./persistence";
 export * from "./players";
 export * from "./roles";
+export * from "./nightwake";
 export * from "./socket";
 export * from "./voting";

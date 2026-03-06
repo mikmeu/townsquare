@@ -159,6 +159,10 @@
             </template>
             <template v-else> {{ t('player.occupiedSeat') }}</template>
           </li>
+          <li v-if="canWhisper" @click="whisperPlayer">
+            <font-awesome-icon icon="hand-sparkles" class="fa fa-hand-sparkles" />
+            {{ t('player.whisper') }}
+          </li>
         </ul>
       </transition>
     </div>
@@ -245,6 +249,22 @@ const voteLocked = computed(() => {
   const indexAdjusted =
     (index.value - 1 + playersCount - referenceIndex) % playersCount;
   return indexAdjusted < votingStore.lockedVote - 1;
+});
+
+const canWhisper = computed(() => {
+  if (!session.isPlayerOrSpectator || !session.sessionId) return false;
+  if (!props.player.id || props.player.id === session.playerId) return false;
+
+  const mySeat = players.value.findIndex((player) => player.id === session.playerId);
+  const targetSeat = index.value;
+  const seatCount = players.value.length;
+
+  if (mySeat < 0 || targetSeat < 0 || seatCount < 2) return false;
+
+  const left = (mySeat - 1 + seatCount) % seatCount;
+  const right = (mySeat + 1) % seatCount;
+
+  return targetSeat === left || targetSeat === right;
 });
 
 const isSpecialVoteWithMessages = computed(() => {
@@ -382,6 +402,11 @@ function claimSeat() {
       changeName();
     }, 100);
   }
+}
+
+function whisperPlayer() {
+  isMenuOpen.value = false;
+  emit("trigger", ["openWhisper", props.player]);
 }
 
 function vote() {

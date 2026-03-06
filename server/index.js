@@ -193,6 +193,33 @@ wss.on("connection", function connection(ws, req) {
           console.log("error parsing direct message JSON", e);
         }
         break;
+      case '"whisper"':
+        // Whispers are validated by the host; only forward request to host with sender identity.
+        try {
+          const [, params] = JSON.parse(data);
+          const host = channels[ws.channel].find(
+            (client) =>
+              client &&
+              client !== ws &&
+              client.readyState === WebSocket.OPEN &&
+              client.playerId === "host",
+          );
+          if (host) {
+            host.send(
+              JSON.stringify([
+                "whisper",
+                {
+                  ...params,
+                  fromPlayerId: ws.playerId,
+                },
+              ]),
+            );
+            metrics.messages_outgoing.inc();
+          }
+        } catch (e) {
+          console.log("error parsing whisper JSON", e);
+        }
+        break;
       default:
         // all other messages
         console.log(

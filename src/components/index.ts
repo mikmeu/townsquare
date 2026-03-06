@@ -5,6 +5,8 @@ export { default as Intro } from "./Intro.vue";
 export { default as Jukebox } from "./Jukebox.vue";
 export { default as Menu } from "./Menu.vue";
 export { default as NightOrderTable } from "./NightOrderTable.vue";
+export { default as NightWakePrompt } from "./NightWakePrompt.vue";
+export { default as NightWakeStoryteller } from "./NightWakeStoryteller.vue";
 export { default as Npcs } from "./Npcs.vue";
 export { default as RoleIcon } from "./RoleIcon.vue";
 export { default as Seat } from "./Seat.vue";
@@ -13,6 +15,7 @@ export { default as Token } from "./Token.vue";
 export { default as TownInfo } from "./TownInfo.vue";
 export { default as TownSquare } from "./TownSquare.vue";
 export { default as Vote } from "./Vote.vue";
+export { default as WhispersPanel } from "./WhispersPanel.vue";
 
 export { default as EditionModal } from "./modals/EditionModal.vue";
 export { default as FabledModal } from "./modals/FabledModal.vue";

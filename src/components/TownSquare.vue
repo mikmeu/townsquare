@@ -14,6 +14,9 @@
     </ul>
     <Bluffs @open-role-modal="openRoleModal" />
     <SideMenu />
+    <WhispersPanel />
+    <NightWakeStoryteller />
+    <NightWakePrompt />
     <Npcs />
     <ReminderModal :player-index="selectedPlayer" />
     <RoleModal :player-index="selectedPlayer" />
@@ -22,7 +25,17 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Bluffs, Npcs, ReminderModal, RoleModal, Seat, SideMenu } from '@/components';
+import {
+  Bluffs,
+  NightWakePrompt,
+  NightWakeStoryteller,
+  Npcs,
+  ReminderModal,
+  RoleModal,
+  Seat,
+  SideMenu,
+  WhispersPanel,
+} from '@/components';
 import {
   useGrimoireStore,
   useLocaleStore,
@@ -31,6 +44,7 @@ import {
   useSessionStore,
   useUserPreferencesStore,
   useVotingStore,
+  useWhispersStore,
 } from "@/stores";
 import type { Player } from "@/types";
 
@@ -42,6 +56,7 @@ const playersMenuStore = usePlayersMenuStore();
 const session = useSessionStore();
 const userPreferences = useUserPreferencesStore();
 const votingStore = useVotingStore();
+const whispersStore = useWhispersStore();
 
 const players = computed(() => playersStore.players);
 
@@ -63,6 +78,7 @@ const handleTrigger = (playerIndex: number, event: string | [string] | [string, 
     swapPlayer,
     movePlayer,
     nominatePlayer,
+    openWhisper,
   };
 
   if (typeof methodMap[method] === "function") {
@@ -219,6 +235,13 @@ const nominatePlayer = (from: number, to?: Player) => {
     });
     cancel();
   }
+};
+
+const openWhisper = (_from: number, to?: Player) => {
+  if (!session.isPlayerOrSpectator || !to) return;
+  const peerSeat = players.value.indexOf(to);
+  if (peerSeat < 0) return;
+  whispersStore.openConversation(peerSeat);
 };
 </script>
 

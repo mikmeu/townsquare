@@ -4,13 +4,17 @@ import {
   usePlayersStore,
   useSessionStore,
   useLocaleStore,
+  useNightWakeStore,
   useSoundboardStore,
   useVotingStore,
+  useWhispersStore,
 } from "@/stores";
 import type {
   Edition,
   GamePhase,
   JukeboxSound,
+  NightWakePrompt,
+  NightWakeResponse,
   Nomination,
   Player,
   Role,
@@ -114,9 +118,28 @@ export class LiveSession {
   }
 
   send(command: SocketCommands, params: unknown) {
+    if (command === "whisper" && this._isPlayerOrSpectator) {
+      this._sendWhisperFromPlayer(
+        params as {
+          toSeat?: number;
+          message?: string;
+        },
+      );
+      return;
+    }
     if (this._socket?.readyState === 1) {
       this._socket.send(JSON.stringify([command, params]));
     }
+  }
+
+  sendWhisper(toSeat: number, message: string) {
+    if (!this._isPlayerOrSpectator) return;
+    const text = String(message || "").trim().slice(0, 240);
+    if (!text) return;
+    this.send("whisper", {
+      toSeat,
+      message: text,
+    });
   }
 
   _sendDirect(
@@ -278,6 +301,25 @@ export class LiveSession {
       case "bye":
         this._handleBye(params as string);
         break;
+      case "whisper":
+        this._handleWhisper(
+          params as {
+            fromPlayerId?: string;
+            fromSeat?: number;
+            toSeat?: number;
+            message?: string;
+            fromName?: string;
+            toName?: string;
+            direction?: "incoming" | "outgoing";
+          },
+        );
+        break;
+      case "nightWake":
+        this._handleNightWake(params as NightWakePrompt);
+        break;
+      case "nightWakeResponse":
+        this._handleNightWakeResponse(params as NightWakeResponse);
+        break;
       case "pronouns":
         this._updatePlayerPronouns(params as [number, string]);
         break;
@@ -294,10 +336,14 @@ export class LiveSession {
   }
 
   connect(channel: string) {
+    const nightWakeStore = useNightWakeStore();
     const sessionStore = useSessionStore();
+    const whispersStore = useWhispersStore();
     if (!sessionStore.playerId) {
       sessionStore.setPlayerId(Math.random().toString(36).substring(2));
     }
+    whispersStore.clear();
+    nightWakeStore.clearAll();
     this._pings = {};
     sessionStore.setPlayerCount(0);
     sessionStore.setPing(0);
@@ -306,8 +352,12 @@ export class LiveSession {
   }
 
   disconnect() {
+    const nightWakeStore = useNightWakeStore();
     const sessionStore = useSessionStore();
+    const whispersStore = useWhispersStore();
     this._pings = {};
+    whispersStore.clear();
+    nightWakeStore.clearAll();
     sessionStore.setPlayerCount(0);
     sessionStore.setPing(0);
     sessionStore.setReconnecting(false);
@@ -680,6 +730,145 @@ export class LiveSession {
         value: "",
       });
     }
+  }
+
+  _isAdjacentSeats(fromSeat: number, toSeat: number, seatCount: number) {
+    if (seatCount < 2) return false;
+    const left = (fromSeat - 1 + seatCount) % seatCount;
+    const right = (fromSeat + 1) % seatCount;
+    return toSeat === left || toSeat === right;
+  }
+
+  _sendWhisperFromPlayer(params: { toSeat?: number; message?: string }) {
+    const playersStore = usePlayersStore();
+    const sessionStore = useSessionStore();
+    const whispersStore = useWhispersStore();
+
+    const toSeat = Number(params.toSeat);
+    const message = String(params.message || "").trim().slice(0, 240);
+    const players = playersStore.players;
+    const fromSeat = players.findIndex((player) => player.id === sessionStore.playerId);
+
+    if (!message || !Number.isInteger(toSeat) || fromSeat < 0 || toSeat < 0) return;
+    if (toSeat >= players.length || toSeat === fromSeat) return;
+    if (!this._isAdjacentSeats(fromSeat, toSeat, players.length)) return;
+
+    const fromPlayer = players[fromSeat];
+    const toPlayer = players[toSeat];
+    if (!fromPlayer?.id || !toPlayer?.id) return;
+
+    this.send("direct", {
+      [toPlayer.id]: ["whisper", {
+        fromSeat,
+        toSeat,
+        fromPlayerId: fromPlayer.id,
+        fromName: fromPlayer.name,
+        message,
+        direction: "incoming",
+      }],
+    });
+
+    whispersStore.addOutgoingMessage({
+      toSeat,
+      toName: toPlayer.name,
+      text: message,
+    });
+  }
+
+  _handleWhisper(params: {
+    fromPlayerId?: string;
+    fromSeat?: number;
+    toSeat?: number;
+    message?: string;
+    fromName?: string;
+    toName?: string;
+    direction?: "incoming" | "outgoing";
+  }) {
+    const playersStore = usePlayersStore();
+    const whispersStore = useWhispersStore();
+    const message = String(params.message || "").trim().slice(0, 240);
+    if (!message) return;
+
+    if (this._isPlayerOrSpectator) {
+      const sessionStore = useSessionStore();
+      const peerSeat =
+        params.direction === "outgoing"
+          ? Number(params.toSeat)
+          : Number(params.fromSeat);
+      if (!Number.isInteger(peerSeat) || peerSeat < 0) return;
+
+      const mySeat = playersStore.players.findIndex(
+        (player) => player.id === sessionStore.playerId,
+      );
+      if (!this._isAdjacentSeats(mySeat, peerSeat, playersStore.players.length)) return;
+
+      if (params.fromPlayerId && params.direction === "incoming") {
+        const claimedBySender = playersStore.players[peerSeat]?.id;
+        if (claimedBySender !== params.fromPlayerId) return;
+      }
+
+      if (params.direction === "outgoing") {
+        whispersStore.addOutgoingMessage({
+          toSeat: peerSeat,
+          toName: params.toName || "",
+          text: message,
+        });
+      } else {
+        whispersStore.addIncomingMessage({
+          fromSeat: peerSeat,
+          fromName: params.fromName || "",
+          text: message,
+        });
+      }
+      return;
+    }
+
+    const fromPlayerId = String(params.fromPlayerId || "");
+    const toSeat = Number(params.toSeat);
+    if (!fromPlayerId || !Number.isInteger(toSeat)) return;
+
+    const players = playersStore.players;
+    const seatCount = players.length;
+    const fromSeat = players.findIndex((player) => player.id === fromPlayerId);
+    if (fromSeat < 0 || toSeat < 0 || toSeat >= seatCount || toSeat === fromSeat) {
+      return;
+    }
+    if (!this._isAdjacentSeats(fromSeat, toSeat, seatCount)) return;
+
+    const fromPlayer = players[fromSeat];
+    const toPlayer = players[toSeat];
+    if (!fromPlayer?.id || !toPlayer?.id) return;
+
+    this.send("direct", {
+      [toPlayer.id]: ["whisper", {
+        fromSeat,
+        toSeat,
+        fromName: fromPlayer.name,
+        message,
+        direction: "incoming",
+      }],
+      [fromPlayer.id]: ["whisper", {
+        fromSeat,
+        toSeat,
+        toName: toPlayer.name,
+        message,
+        direction: "outgoing",
+      }],
+    });
+  }
+
+  _handleNightWake(prompt: NightWakePrompt) {
+    if (!this._isPlayerOrSpectator) return;
+    const nightWakeStore = useNightWakeStore();
+    const sessionStore = useSessionStore();
+    if (prompt.targetPlayerId !== sessionStore.playerId) return;
+    nightWakeStore.setPrompt(prompt);
+  }
+
+  _handleNightWakeResponse(response: NightWakeResponse) {
+    if (this._isPlayerOrSpectator) return;
+    const nightWakeStore = useNightWakeStore();
+    nightWakeStore.addResponse(response);
   }
 
   _updateSeat([seatIndex, playerId]: [number, string]) {
