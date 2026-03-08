@@ -31,7 +31,7 @@
         </span>
       </div>
 
-      <Token :role="props.player.role" :player="props.player" @set-role="$emit('trigger', ['openRoleModal'])" />
+      <Token :role="props.player.role" :player="props.player" @set-role="onTokenClick" />
 
       <!-- Overlay icons -->
       <div class="overlay">
@@ -402,6 +402,17 @@ function claimSeat() {
       changeName();
     }, 100);
   }
+}
+
+function onTokenClick() {
+  if (session.isPlayerOrSpectator) {
+    if (!props.player.id) {
+      claimSeat();
+    }
+    return;
+  }
+
+  emit("trigger", ["openRoleModal"]);
 }
 
 function whisperPlayer() {

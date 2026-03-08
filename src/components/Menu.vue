@@ -178,7 +178,7 @@
             {{ t('menu.assign') }}
             <em>[C]</em>
           </li>
-          <li v-if="!session.isPlayerOrSpectator" @click="playersStore.distributeRolesAction()">
+          <li v-if="session.sessionId && !session.isPlayerOrSpectator" @click="playersStore.distributeRolesAction()">
             {{ t('menu.sendRoles') }}
             <em><font-awesome-icon icon="theater-masks" class="fa fa-theater-masks" /></em>
           </li>
@@ -205,7 +205,7 @@
             </template>
             <em>[S]</em>
           </li>
-          <li v-if="!session.isPlayerOrSpectator" @click="playersStore.distributeRolesAction()">
+          <li v-if="session.sessionId && !session.isPlayerOrSpectator" @click="playersStore.distributeRolesAction()">
             {{ t('menu.sendRoles') }}
             <em><font-awesome-icon icon="theater-masks" class="fa fa-theater-masks" /></em>
           </li>
